@@ -15,10 +15,10 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--model', type=str, default='', help='model path')
-parser.add_argument('--idx', type=int, default=0, help='model index')
-parser.add_argument('--dataset', type=str, default='', help='dataset path')
-parser.add_argument('--class_choice', type=str, default='', help='class choice')
+parser.add_argument('--model', type=str, default='/data/kangwenbin/PointNet/utils/seg/seg_model_Chair_9.pth', help='model path')
+parser.add_argument('--idx', type=int, default=0, help='model index') # 选出该类物体的第idx个点云数据，输入到给定的模型，然后输出分割结果
+parser.add_argument('--dataset', type=str, default='/data/kangwenbin/Datasets/shapenetcore_partanno_segmentation_benchmark_v0', help='dataset path')
+parser.add_argument('--class_choice', type=str, default='Chair', help='class choice')
 
 opt = parser.parse_args()
 print(opt)

@@ -101,13 +101,13 @@ class PointNetfeat(nn.Module):
 
     def forward(self, x):
         n_pts = x.size()[2]
-        trans = self.stn(x)
+        trans = self.stn(x) # t-net网络
         x = x.transpose(2, 1)
         x = torch.bmm(x, trans)
         x = x.transpose(2, 1)
-        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn1(self.conv1(x))) # 第一次mlp x-size:(32,64,2500)
 
-        if self.feature_transform:
+        if self.feature_transform:  # 这里没做feature transformer
             trans_feat = self.fstn(x)
             x = x.transpose(2,1)
             x = torch.bmm(x, trans_feat)
@@ -115,16 +115,18 @@ class PointNetfeat(nn.Module):
         else:
             trans_feat = None
 
-        pointfeat = x
+        pointfeat = x   # 保留x，用于后面的拼接
+        # 第二次mlp，x-size:(32,1024,2500)
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.bn3(self.conv3(x))
-        x = torch.max(x, 2, keepdim=True)[0]
-        x = x.view(-1, 1024)
+
+        x = torch.max(x, 2, keepdim=True)[0]  # maxpooling x-size:(32,1024,1)
+        x = x.view(-1, 1024) # x-size:(32,1024)
         if self.global_feat:
             return x, trans, trans_feat
         else:
-            x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
-            return torch.cat([x, pointfeat], 1), trans, trans_feat
+            x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)  # x_size:(32,1034,2500)
+            return torch.cat([x, pointfeat], 1), trans, trans_feat # 这里做了一个拼接，成(32,1088,2500)
 
 class PointNetCls(nn.Module):
     def __init__(self, k=2, feature_transform=False):
@@ -156,22 +158,25 @@ class PointNetDenseCls(nn.Module):
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
-        self.conv4 = torch.nn.Conv1d(128, self.k, 1)
-        self.bn1 = nn.BatchNorm1d(512)
+        self.conv4 = torch.nn.Conv1d(128, self.k, 1)  # 这里的k为4
+        self.bn1 = nn.BatchNorm1d(512)  # BatchNorm就是在深度神经网络训练过程中使得每一层神经网络的输入保持相同分布的
         self.bn2 = nn.BatchNorm1d(256)
         self.bn3 = nn.BatchNorm1d(128)
 
     def forward(self, x):
         batchsize = x.size()[0]
-        n_pts = x.size()[2]
-        x, trans, trans_feat = self.feat(x)
-        x = F.relu(self.bn1(self.conv1(x)))
+        n_pts = x.size()[2] # num_of_points,这里输入的采样点是2500个
+        x, trans, trans_feat = self.feat(x) # 先经过一个pointNetfeat，这里x的size是(32,1088,2500)
+
+        # 这三步是一个mlp全连接
+        x = F.relu(self.bn1(self.conv1(x)))  # x-size:(32,512,2500)
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
-        x = self.conv4(x)
+
+        x = self.conv4(x)  # x-size:(32,4,2500)
         x = x.transpose(2,1).contiguous()
         x = F.log_softmax(x.view(-1,self.k), dim=-1)
-        x = x.view(batchsize, n_pts, self.k)
+        x = x.view(batchsize, n_pts, self.k) # reshape成(32, 2500, 4)
         return x, trans, trans_feat
 
 def feature_transform_regularizer(trans):

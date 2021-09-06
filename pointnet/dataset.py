@@ -69,7 +69,7 @@ class ShapeNetDataset(data.Dataset):
         self.classification = classification
         self.seg_classes = {}
         
-        with open(self.catfile, 'r') as f:
+        with open(self.catfile, 'r') as f:  # 列举一个字典。键是类别，值是文件夹的名称
             for line in f:
                 ls = line.strip().split()
                 self.cat[ls[0]] = ls[1]

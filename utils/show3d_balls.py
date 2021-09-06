@@ -2,6 +2,7 @@ import numpy as np
 import ctypes as ct
 import cv2
 import sys
+import matplotlib.pyplot as plt
 showsz = 800
 mousex, mousey = 0.5, 0.5
 zoom = 1.0
@@ -36,7 +37,6 @@ def showpoints(xyz,c_gt=None, c_pred = None, waittime=0,
         c0 = c_gt[:, 0]
         c1 = c_gt[:, 1]
         c2 = c_gt[:, 2]
-
 
     if normalizecolor:
         c0 /= (c0.max() + 1e-14) / 255.0
@@ -106,7 +106,8 @@ def showpoints(xyz,c_gt=None, c_pred = None, waittime=0,
         if changed:
             render()
             changed = False
-        cv2.imshow('show3d', show)
+        # cv2.imshow('show3d', show)
+        plt.imshow(show)
         if waittime == 0:
             cmd = cv2.waitKey(10) % 256
         else:
